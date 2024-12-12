@@ -1,0 +1,454 @@
+---
+title: "The evolution of anuran locomotion and skeletal anatomy"
+author: 'Lada Polyakova'
+date: "22-01-2023"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+  word_document: default
+always_allow_html: yes
+---
+
+```{r setup, include=FALSE}
+ifanswers <- FALSE
+options(tinytex.verbose = TRUE)
+
+```
+
+## Introduction
+
+This paper explores the anuran anatomical specializations of limbs and pelvis for different movement modes. Locomotor performance is critical for fitness as it determines the efficiency of predators escaping [1]. It is suggested that jumping plays a key role in evolutionary success[2]. Nevertheless, Anurans acquired a wide range of skeletal structures, habitats and locomotor modes (e.g. jumping and hopping, which differ in relative jumping distance[3]). The aim of this work is to examine how skeletal anatomy in anurans is affected by locomotor and phylogenetic demands. 
+
+## Methods and Results
+
+Data analysis was performed using R-4.2.1 and RStudio 2022.12.0 for Windows. Additional packages include ***tidyverse*** (*ggplot2*, *ggfortify* libraries) for data visualization. Package ***fields*** was installed to produce heatmaps (*fields* library). Finally, ***kableExtra*** package with the homonymous library to create summary tables. 
+
+```{r packages and libraries, include=FALSE}
+#install.packages("tidyverse")
+library(ggplot2)
+library(ggfortify) #pca graphs
+
+#install.packages("fields")
+library(fields)
+
+#install.packages("kableExtra")
+library(kableExtra)
+```
+
+#### Data \
+
+
+```{r loading the dataset, include=FALSE}
+frogs = read.delim("BIOL0029.HW2.2022.txt")
+head(frogs)
+```
+
+Data provided by UCL GEE Department includes 6 skeletal measurements from 164 anuran species across four clades (Basal/Hyloidea/Neobatrachia/Ranoidea). Snout-vent length(SVL), expansion of the sacral diapophyses(ESD), calcaneus(calc), femur(fem), tibiofibular(tib), and foot length were measured. Additionally, one of five locomotor modes was assigned to each species: arboreal jumper(AJ), terrestrial jumper(TJ), burrower-walker-hopper(BWH), walker-hopper(WH), or aquatic/swimmer(AQ).
+
+
+#### Data transformations and preliminary analysis \
+
+
+```{r correcting for body size, include=FALSE}
+frogs[,5:9] = apply(frogs[,5:9], 2, function(a){return(a/frogs$SVL)})
+head(frogs)
+```
+
+First, skeletal measurements were corrected for body size by dividing each variable by corresponding SVL. Additionally, it was shown in previous studies that body size has no evolutionary association with locomotion[4], so we did not include it in our analysis.
+
+Preliminary data investigation involved plotting each skeletal measurement grouped by clade and locomotor_mode to compare their descriptive statistics. Figure1a shows a strong variation in ESD across clades. We saw that Basals exhibit larger ESD, increasing variance and affecting ESD distribution. Figure1b depicts the general tendency of jumper frogs (AJ/TJ) to have greater lengths of calcaneus/femur/tibiofibular.
+ 
+
+```{r Figure1 Skeletal measurements visualisation, include=TRUE, fig.show='hold', out.width='50%', fig.cap="Skeletal measurements across (a) Clades and (b) Locomotor modes", echo=FALSE, fig.pos='h'}
+
+#skeletal measurements across clades
+ggplot(data=frogs, aes(fill=clade, color=clade))+
+  geom_boxplot(aes(x = "ESD", y = ESD)) +
+  geom_point(aes(x = "ESD", y = ESD), alpha = 0.5, position = position_jitterdodge(jitter.width = 0.1, jitter.height = 0.1))+
+  geom_boxplot(aes(x="fem_length", y = fem_length))+
+  geom_point(aes(x="fem_length", y = fem_length), alpha = 0.5, position = position_jitterdodge(jitter.width = 0.1, jitter.height = 0.1))+
+  geom_boxplot(aes(x="tib_length", y = tib_length))+
+  geom_point(aes(x="tib_length", y = tib_length), alpha = 0.5, position = position_jitterdodge(jitter.width = 0.1, jitter.height = 0.1))+
+  geom_boxplot(aes(x="calc_length", y = calc_length))+
+  geom_point(aes(x="calc_length", y = calc_length), alpha = 0.5, position = position_jitterdodge(jitter.width = 0.1, jitter.height = 0.1))+
+  geom_boxplot(aes(x="foot_length", y = foot_length))+
+  geom_point(aes(x="foot_length", y = foot_length), alpha = 0.5, position = position_jitterdodge(jitter.width = 0.1, jitter.height = 0.1))+
+  scale_y_continuous(name= "value of the skeletal measurements")+
+  xlab("skeletal measurement")+
+  ggtitle("(a) Skeletal measurements across clades")
+
+#skeletal measurements across various locomotor modes
+ggplot(data=frogs, aes(fill=locomotor_mode, color=locomotor_mode))+
+  geom_boxplot(aes(x = "ESD", y = ESD)) +
+  geom_point(aes(x = "ESD", y = ESD), alpha = 0.5, position = position_jitterdodge(jitter.width = 0.1, jitter.height = 0.1))+
+  geom_boxplot(aes(x="fem_length", y = fem_length))+
+  geom_point(aes(x="fem_length", y = fem_length), alpha = 0.5, position = position_jitterdodge(jitter.width = 0.1, jitter.height = 0.1))+
+  geom_boxplot(aes(x="tib_length", y = tib_length))+
+  geom_point(aes(x="tib_length", y = tib_length), alpha = 0.5, position = position_jitterdodge(jitter.width = 0.1, jitter.height = 0.1))+
+  geom_boxplot(aes(x="calc_length", y = calc_length))+
+  geom_point(aes(x="calc_length", y = calc_length), alpha = 0.5, position = position_jitterdodge(jitter.width = 0.1, jitter.height = 0.1))+
+  geom_boxplot(aes(x="foot_length", y = foot_length))+
+  geom_point(aes(x="foot_length", y = foot_length), alpha = 0.5, position = position_jitterdodge(jitter.width = 0.1, jitter.height = 0.1))+
+  scale_y_continuous(name= "value of the skeletal measurements")+
+  xlab("skeletal measurement")+
+  ggtitle("(b) Skeletal measurements across various locomotor modes")
+
+```
+
+Since the experimental design is complex, outliers were not excluded because it would reduce variation within phylogenetic groups. Normality assumptions for skeletal measurements were checked using histograms and Shapiro-Wilk test(p>0.05) for further statistical methods .
+
+
+```{r normallity checks, include = FALSE}
+
+shapiro.test(frogs$ESD) #p-value = 5.198e-16 => not normally distributed => better to use glm()
+shapiro.test((frogs$ESD[frogs$clade=="Basal"])) #p-value = 0.2924
+
+hist(frogs$fem_length, xlab = "fem_length")
+shapiro.test(frogs$fem_length) # p-value = 0.1191
+
+hist(frogs$tib_length, xlab = "tib_length")
+shapiro.test(frogs$tib_length) #p-value = 0.4582
+
+hist(frogs$calc_length, xlab = "calc_length") 
+shapiro.test(frogs$calc_length) #p-value = 0.9551
+
+hist(frogs$foot_length, xlab = "foot_length") 
+shapiro.test(frogs$foot_length) #p-value = 0.2958
+
+```
+
+\newpage
+
+#### Clade and locomotor mode \
+
+```{r clade~locomotor_mode, include=FALSE}
+chisq.test(frogs$clade, frogs$locomotor_mode) #1.279e-07
+```
+
+To assess the significant association between clades and locomotor modes Chi-squared test was used since variables are categorical. Additionally, a mosaic plot was used to visualize types of locomotion across phylogenetic groups (Figure2).
+
+```{r figure mosaic plot, include=TRUE, echo=FALSE, fig.cap="Association between clades and locomotor modes", fig.pos="h", out.width='65%', fig.show='hold', fig.align='center'}
+mosaicplot(clade~locomotor_mode, data=frogs, ylab = "Locomotor mode", xlab="Clade", 
+           color=c("brown2", "dodgerblue1", "chartreuse2", "gold", "chartreuse4"))
+```
+
+Results show that clades differ significantly in the acquired locomotor modes (Chi-squared: p<0.05). Figure 2 supports this and shows that Basal has no jumping mode but is associated with BWH/WH/AQ. On contrary, Hyloidea/Ranoidea are associated with AT/TJ and rarely AQ/WH/BWH. 
+
+
+#### Linear models for skeletal measurements \
+
+To identify any associations between skeletal anatomy, clade and/or locomotor mode *lm()*, *summary()*, and *anova()* functions were used. Each measurement was a response variable for a linear regression model (lm) with clade and/or locomotor_mode predictors. Models were designed without intercept.
+
+Deviance ratio test was performed with *logLik()* to compare and fit each of four models (clade or locomotor_mode, clade+locomotor_mode, and clade*locomotor_mode). While difference between two best-performed models was significant (Chi-squared:p<0.05), better fitted model was chosen. Otherwise, the simpler model was used. The summaries of final linear models were presented in Table1. 
+
+a. ESD: 
+ ANOVA (model:ESD~clade*locomotor_mode-1) confirmed that all terms explained significant variation (ANOVA:p<0.05 for each term). Basal is associated with larger ESD, whereas Ranoidea and Hyloidea clades are associated with smaller ESD. Anurans with AQ also associate significantly with larger ESD. However, Hyloidea/Neobatrachia/Ranoidea with AQ show decrease in ESD. Hyloidea with TJ is also associated with decrease in ESD.
+```{r ESD models, include=FALSE}
+ESD_mod1 = lm(ESD~locomotor_mode-1, data = frogs)
+ESD_mod2 = lm(ESD~clade-1, data = frogs)
+ESD_mod3 = lm(ESD~clade+locomotor_mode-1, data = frogs)
+ESD_mod4 = lm(ESD~clade*locomotor_mode-1, data = frogs)
+```
+ 
+```{r ESD model fitting, include=FALSE}
+logLik(ESD_mod1) #330.5833
+logLik(ESD_mod2) #342.33
+logLik(ESD_mod3) #355.9108
+logLik(ESD_mod4) #378.3115 -> greater likelihood => better fit
+#deviance
+deltaD_ESD = 2*(as.vector(logLik(ESD_mod4))-as.vector(logLik(ESD_mod3)))
+pchisq(deltaD_ESD, df=18-9, lower.tail = F) #p=1.00401e-06
+```
+
+```{r ESD summary, include=FALSE}
+s_ESD = summary(ESD_mod4)
+a_ESD = anova(ESD_mod4)
+```
+
+b. calcaneus: 
+ ANOVA (model:calc_length~locomotor_mode*clade-1) confirmed that effect of locomotor_mode on calcaneus_length was the same between different clades(clade:locomotor_mode: p>0.05). 
+Estimates (model:calc_length~locomotor_mode+clade-1) reflect that jumping modes are associated with larger calcaneus, whereas BWH/WH/AQ have smaller calcaneus (Table 1; note: Basal row for calc column relates to AJ). Meanwhile, Neobatrachia is associated with longer calcaneus.
+```{r calcaneus models, include=FALSE}
+calc_length_mod1 = lm(calc_length~locomotor_mode-1, data = frogs)
+calc_length_mod2 = lm(calc_length~clade-1, data = frogs)
+calc_length_mod3 = lm(calc_length~locomotor_mode+clade-1, data = frogs)
+calc_length_mod4 = lm(calc_length~clade*locomotor_mode-1, data = frogs)
+```
+
+```{r calcaneus model fitting, include=FALSE}
+logLik(calc_length_mod1) #320.0736 
+logLik(calc_length_mod2) #283.713 
+logLik(calc_length_mod3) #324.3952 -> difference with mod4 is not significant => simpler model and better fit (insignificant term is excluded)
+logLik(calc_length_mod4) #327.5207 
+
+#comparing model 4 and 3
+deltaD_calc = 2*(as.vector(logLik(calc_length_mod4))-as.vector(logLik(calc_length_mod3)))
+pchisq(deltaD_calc, df=18-9, lower.tail = F) #p=0.7145525
+
+summary(calc_length_mod4)
+anova(calc_length_mod4) # interaction term is not significant
+
+#comparing model 3 and model 2
+deltaD_calc2 = 2*(as.vector(logLik(calc_length_mod3))-as.vector(logLik(calc_length_mod1)))
+pchisq(deltaD_calc2, df=9-6, lower.tail = F) #p=0.03443295
+```
+
+```{r calcaneus summary, include=FALSE}
+s_calc = summary(calc_length_mod3)
+a_calc = anova(calc_length_mod3) 
+```
+
+c. femur: 
+ ANOVA (model:fem_length~clade*locomotor_mode-1) revealed significance of all terms (ANOVA:p<0.05). The summary for lm illustrates that BWH/WH modes are associated with shorter femur. Similarly, aquatic frogs tend to have smaller femur.
+```{r femur models, include=FALSE}
+fem_length_mod1 = lm(fem_length~locomotor_mode-1, data = frogs)
+fem_length_mod2 = lm(fem_length~clade-1, data = frogs)
+fem_length_mod3 = lm(fem_length~clade+locomotor_mode-1, data = frogs)
+fem_length_mod4 = lm(fem_length~clade*locomotor_mode-1, data = frogs)
+```
+
+```{r femur model fitting, include=FALSE}
+logLik(fem_length_mod1)  #268.8241 
+logLik(fem_length_mod2)  #235.289 
+logLik(fem_length_mod3)  #269.113 
+logLik(fem_length_mod4)  #278.4956 
+
+deltaD_fem = 2*(as.vector(logLik(fem_length_mod4))-as.vector(logLik(fem_length_mod3)))
+pchisq(deltaD_fem, df=18-9, lower.tail = F) #p=0.02726637 => model 4 is a better fit
+```
+
+```{r femur model summary, include=FALSE}
+s_fem = summary(fem_length_mod4)
+a_fem = anova(fem_length_mod4)
+```
+
+
+d. tibiofibular: 
+ There was no significant difference in effect of locmotor_mode across clades (clade:locomotor_mode:p>0.05). Therefore, a simpler model was chosen (tib_length~clade+locomotor_mode-1). We found that BWH/WH/AQ are associated with smaller tibiofibular length. Neobatrachia is associated with larger tibiofibular length.
+
+```{r tibiofibular models, include=FALSE}
+tib_length_mod1 = lm(tib_length~locomotor_mode-1, data = frogs)
+tib_length_mod2 = lm(tib_length~clade-1, data = frogs)
+tib_length_mod3 = lm(tib_length~clade+locomotor_mode-1, data = frogs)
+tib_length_mod4 = lm(tib_length~clade*locomotor_mode-1, data = frogs)
+```
+
+```{r tibiofibular model fitting, include=FALSE}
+logLik(tib_length_mod1)  #213.8129  
+logLik(tib_length_mod2)  #178.6331  
+logLik(tib_length_mod3)  #214.1624  
+logLik(tib_length_mod4)  #222.6462  
+
+deltaD_tib = 2*(as.vector(logLik(tib_length_mod4))-as.vector(logLik(tib_length_mod3)))
+pchisq(deltaD_tib, df=18-9, lower.tail = F) #p=0.04922716
+
+anova(tib_length_mod4) #interaction term is not significant
+anova(tib_length_mod3, tib_length_mod4) #p=0.07653 -> difference between models is not significant
+```
+
+```{r tibiofibular model summary, include=FALSE}
+s_tib = summary(tib_length_mod3)
+a_tib = anova(tib_length_mod3)
+```
+
+e. foot: 
+ ANOVA (model:foot_length~clade*locomotor_mode-1) revealed that clade did not explain significant variation (ANOVA:p>0.05). Estimates show that Neobatrachia is associated with longer foot length, whereas Basal has an association with smaller foot length.
+```{r foot models, include=FALSE}
+foot_length_mod1 = lm(foot_length~locomotor_mode-1, data = frogs)
+foot_length_mod2 = lm(foot_length~clade-1, data = frogs)
+foot_length_mod3 = lm(foot_length~clade+locomotor_mode-1, data = frogs)
+foot_length_mod4 = lm(foot_length~clade*locomotor_mode-1, data = frogs)
+```
+
+```{r foot model fitting, include=FALSE}
+logLik(foot_length_mod1)  #219.3315 
+logLik(foot_length_mod2)  #205.9136 
+logLik(foot_length_mod3)  #219.3984 
+logLik(foot_length_mod4)  #228.9757  
+deltaD_foot = 2*(as.vector(logLik(foot_length_mod4))-as.vector(logLik(foot_length_mod3)))
+pchisq(deltaD_foot, df=18-9, lower.tail = F) #p=0.0239099
+```
+
+```{r foot model summary, include=FALSE}
+s_foot = summary(foot_length_mod4)
+a_foot = anova(foot_length_mod4)
+```
+
+```{r summary dataframe, include = FALSE}
+coef_estimates = data.frame(ESD = signif(s_ESD$coefficients[,1], 3), 
+    calc = c(signif(c(s_calc$coefficients[1,1], s_calc$coefficients[6:8,1], s_calc$coefficients[2:5,1]), 3), rep("-", 9)), 
+    fem = signif(s_fem$coefficients[,1], 3), 
+    tib = c(signif(c(s_tib$coefficients[1,1], s_tib$coefficients[6:8,1], s_tib$coefficients[2:5,1]), 3),  rep("-", 9)), 
+    foot = signif(s_foot$coefficients[,1], 3))
+
+#creating a dataframe with p-values for estimates of each model (to be used in table color-code)
+p_summary = data.frame(ESD = s_ESD$coefficients[,4], 
+                       calc = c(s_calc$coefficients[1,4], s_calc$coefficients[6:8,4], s_calc$coefficients[2:5,4], rep(1, 9)), 
+                       fem = s_fem$coefficients[,4], 
+                       tib = c(s_tib$coefficients[1,4], s_tib$coefficients[6:8,4], s_tib$coefficients[2:5,4],  rep(1, 9)), 
+                       foot = s_foot$coefficients[,4])
+```
+
+```{r Table 1 Summary of estimates of linear models, include = TRUE, echo=FALSE, fig.pos="H"}
+kbl(coef_estimates, caption = "Summary of lm estimates for each skeletal measurement (3s.f.) (red: Pr(>|t|)<0.05, blue: Pr(>|t|)>0.05)", booktabs = T)%>%
+  kable_styling(latex_options = "striped")%>%
+  kable_styling(latex_options = "HOLD_position")%>%
+  column_spec(column = 2, color = ifelse(p_summary$ESD < 0.05, "red", "blue"))%>%
+  column_spec(column = 3, color = ifelse(p_summary$calc < 0.05, "red", "blue"))%>%
+  column_spec(column = 4, color = ifelse(p_summary$fem < 0.05, "red", "blue"))%>%
+  column_spec(column = 5, color = ifelse(p_summary$tib < 0.05, "red", "blue"))%>%
+  column_spec(column = 6, color = ifelse(p_summary$foot < 0.05, "red", "blue"))
+```
+
+
+#### PCA \
+
+Principal component analysis (PCA) was performed on 5 preliminarily scaled skeletal measurements (excluding SVL),using *prcomp()* function. 
+
+
+```{r PCA, include=FALSE}
+ frogs_pc = scale(frogs[,5:9])
+ p = prcomp(frogs_pc, retx=TRUE)
+ 
+ #calculating variance explained by each PC
+v = p$sdev^2
+pv = 100*v/sum(v)
+
+ #creating vector with loadings for each PC
+k=p$rotation
+```
+a. variance and loadings \
+Variance explained by each principle component (PC) show that PC1+PC2 explain over 81%(Figure3a). Figure3b illustrates that PC1(61.84%) shows strong negative correlation with tibiofibular/femur/calcaneus length (loadings: -0.5550, -0.5386, and -0.4711, respectively). PC2(19.36%) has strong positive correlation with ESD (0.8230). Therefore, these skeletal measurements are the strongest drivers of morphological variation.
+
+
+```{r Figure X PCA variation, include=TRUE, fig.show='hold', out.width='50%', fig.cap="PCA (a) Variation and (b) loadings", echo=FALSE, fig.pos='h'}
+
+#variation explained by each principle component 
+  barplot(pv,xlab="PC",
+          ylab="% variance", ylim=c(0,70), main="(a) Variance explained by each PC")
+
+#loadings for each PC
+pvs = sprintf("%s %.0f %s",colnames(k),pv,"%")
+  image.plot(t(k),xaxt="n", yaxt="n")
+  axis(1,at=seq(0,1,length.out=ncol(k)),labels=pvs, las= 2,cex.axis=0.5)
+  axis(2,at=seq(0,1,length.out=nrow(k)),labels= rownames(k),
+       las= 2,cex.axis=0.5)
+  title(main="(b) Loadings for each PC", ylab="Skeletal measurement", xlab = "Principle Components (% of variation explained)", )
+```
+
+
+b. biplots \
+Using PCA biplots colour-coded by (a) locomotor_mode and (b) clade, we compared species  in phylomorphospace(Figure4). Loadings for each variable are shown with the respective vectors on a biplot. 
+By analyzing their length we found that ESD contains the most and foot_length the least variation. Acute angles between fem_length and tib_length vectors indicate correlation between these variables. We confirmed a correlation between the calcaneus and tibiofibular by looking at the changes in loadings for PC4 and PC5 (Figure3b).
+
+```{r Figure X PCA biplots, include=TRUE, fig.show='hold', out.width='50%', fig.cap="PCA biplots color-coded by (a) locomotor mode and (b) clade", echo=FALSE, fig.pos='h'}
+#color-coded by locomotor mode
+autoplot(p, data = frogs, colour = 'locomotor_mode', loadings=TRUE, loadings.label=TRUE, frame = TRUE)+
+  ggtitle("(a) PCA colour-coded by locomotor mode")
+
+#color-coded by clade
+autoplot(p, data = frogs, colour = 'clade', loadings=TRUE, loadings.label=TRUE, frame = TRUE)+
+  ggtitle("(b) PCA colour-coded by clade")
+```
+\newpage
+
+There were no distinct clusters, but general trends in data distribution can be obtained. AQ is located in the area with smaller hindlimb compartments (fem_length, tib_length, calc_length), and greater ESD (Figure4a). AJ/TJ are shifted towards longer hindlimbs and smaller ESD. BWH/WH clusters are shifted to larger ESD and smaller hindlimbs. BWH mode shows the greatest variation.
+
+Basal clustered around greater ESD and smaller hindlimbs(Figure4b). Neobatrachia and Ranoidea are both clustered around the origin, and prone to have smaller ESD. Hyloidea is shifted to greater hindlimbs, and shows the greatest variation.
+
+
+c. linear models for PCs\
+Models designed for each PC(response) detected association with clade/locomotor_mode(predictors). Estimates for each model in Table 2 show that PC1 (negative correlation with tib_length/fem_length) is associated with negative values for Hyloidea/Ranoidea, and with greater values for BWH/WH. PC2 (positive correlation with ESD) is associated with greater values for Basal clade and AQ mode. The rest of PCs explained very minor variation. None of the terms for PC5 explained significant variation(ANOVA:p>0.05)
+
+```{r linear models for each PC, include= FALSE}
+pc1_lm = lm(p$x[,1]~frogs$clade*frogs$locomotor_mode-1)
+s_pc1 = summary(pc1_lm)
+anova(pc1_lm)
+
+pc2_lm = lm(p$x[,2]~frogs$clade*frogs$locomotor_mode-1)
+s_pc2 = summary(pc2_lm)
+anova(pc2_lm)
+
+pc3_lm = lm(p$x[,3]~frogs$clade*frogs$locomotor_mode-1)
+s_pc3 = summary(pc3_lm)
+anova(pc3_lm)
+
+pc4_lm = lm(p$x[,4]~frogs$clade*frogs$locomotor_mode-1)
+s_pc4 = summary(pc4_lm)
+anova(pc4_lm)
+
+pc5_lm = lm(p$x[,5]~frogs$clade*frogs$locomotor_mode-1)
+s_pc5 = summary(pc5_lm)
+anova(pc5_lm)
+```
+
+```{r summary for pc dataframe, include = FALSE}
+pc_coef_estimates = data.frame(pc1 = signif(s_pc1$coefficients[,1], 3), 
+                            pc2 = signif(s_pc2$coefficients[,1], 3), 
+                            pc3 = signif(s_pc3$coefficients[,1], 3), 
+                            pc4 = signif(s_pc4$coefficients[,1], 3),
+                            pc5 = signif(s_pc5$coefficients[,1], 3))
+
+#creating a dataframe with p-values for estimates of each model (to be used in table color-code)
+pc_p_summary = data.frame(p_pc1 = s_pc1$coefficients[,4], 
+                       p_pc2 = s_pc2$coefficients[,4],
+                       p_pc3 = s_pc3$coefficients[,4], 
+                       p_pc4 = s_pc4$coefficients[,4],
+                       p_pc5 = s_pc5$coefficients[,4])
+```
+
+
+```{r Table 2 Summary of estimates of linear models for pc, include = TRUE, echo=FALSE, fig.pos="H", fig.show='hold'}
+kbl(pc_coef_estimates, caption = "Summary of lm for PCs (3s.f.) (red: Pr(>|t|)<0.05, blue: Pr(>|t|)>0.05)", booktabs = T)%>%
+  kable_styling(latex_options = "striped")%>%
+  kable_styling(latex_options = "HOLD_position")%>%
+  column_spec(column = 2, color = ifelse(pc_p_summary$p_pc1 < 0.05, "red", "blue"))%>%
+  column_spec(column = 3, color = ifelse(pc_p_summary$p_pc2 < 0.05, "red", "blue"))%>%
+  column_spec(column = 4, color = ifelse(pc_p_summary$p_pc3 < 0.05, "red", "blue"))%>%
+  column_spec(column = 5, color = ifelse(pc_p_summary$p_pc4 < 0.05, "red", "blue"))%>%
+  column_spec(column = 6, color = ifelse(pc_p_summary$p_pc5 < 0.05, "red", "blue"))
+```
+
+
+## Discussion
+
+This work examined the relationship between anatomical features, ecological factors and evolutionary history. Using regression models and PCA we determined which morphological features contribute to the variation the most. Thus, we found to what extent locomotor mode and phylogenetic demands impact anuran skeletal anatomy.
+
+ESD is the strongest driver of morphological variation[4] and it changed the most when modern frogs emerged. Larger sacral diapophyses expansion associates with Basal frogs, which include walkers-hoppers/swimmers[3,4], so we suggest that ESD serves as an attachment point for muscles involved in walking and swimming. Modern frogs that acquired a new jumping mode have decreased ESD. This finding echoes the idea that jumping is crucial in anuran evolutionary success[2] and is supported by the emergence of arboreal jumpers only in later phylogenetic groups[5,6].
+
+Length of calcaneus/femur/tibiofibular correlated with each other and together contributed to the hindlimb length, greater values of which are associated with jumper modes. This finding suggests that longer hindlimbs improve jumping performance, whereas frogs with shorter hindlimbs tend to perform better at burrowing/walking/hopping[7,8]. This is possible due to elevated take-off velocity by stronger propulsive force via increasing the distance through which it acts[9]. Recent studies suggest that elongation of the hindlimbs is connected to the high locomotion demand via an increment of bone formation[10]. 
+
+In addition, our results show that the most diverse group in terms of anatomical structure is Hyloidea, also known as tree frogs, suggesting ESD/hindlimb weak conservation. Consequently, such anatomical variation enables specific adaptation to new microhabitats/behaviours[1]. This way, we suggest that long hindlimbs may improve climbing ability, as well as larger ESD allowing fore-aft translation of the iliac shafts during climbing[11].
+
+In conclusion, our work complies with previous studies and illustrates that despite general trends between associated movement modes, we cannot predict locomotor function or phylogenic position using morphology alone. Additionally, the diversity of habitats and interactions between clade and locomotion complicate their prediction made using skeletal anatomy.
+
+
+## Bibliography 
+
+1. Citadini, J. M. et al. (2018). Evolution of morphology and locomotor performance in anurans: relationships with microhabitat diversification. *Journal of Evolutionary Biology*., 31(3), 371–381. https://doi.org/10.1111/jeb.13228
+
+2. Essner, R.L. et al. (2010). Landing in basal frogs: evidence of saltational patterns in the evolution of anuran locomotion. *Naturwissenschaften* 97, 935–939. https://doi.org/10.1007/s00114-010-0697-4
+
+3. Emerson. (1978). Allometry and Jumping in Frogs: Helping the Twain to Meet. *Evolution*, 32(3), 551–564. https://doi.org/10.1111/j.1558-5646.1978.tb04598.x
+
+4. Jorgensen, & Reilly, S. M. (2013). Phylogenetic patterns of skeletal morphometrics and pelvic traits in relation to locomotor mode in frogs.  *Journal of Evolutionary Biology*, 26(5), 929–943. https://doi.org/10.1111/jeb.12128
+
+5. Scott. (2005). A phylogeny of ranid frogs (Anura: Ranoidea: Ranidae), based on a simultaneous analysis of morphological and molecular data. *Cladistics*, 21(6), 507–574. https://doi.org/10.1111/j.1096-0031.2005.00079.x
+
+6. Lires, Soto, I. M., & Gómez, R. O. (2016). Walk before you jump: new insights on early frog locomotion from the oldest known salientian. *Paleobiology*, 42(4), 612–623. https://doi.org/10.1017/pab.2016.11
+
+7. Soliz, Tulli, M. J., & Abdala, V. (2017). Osteological postcranial traits in hylid anurans indicate a morphological continuum between swimming and jumping locomotor modes. *Journal of Morphology (1931)*, 278(3), 403–417. https://doi.org/10.1002/jmor.20651
+
+8. Emerson, S. B. (1991). The ecomorphology of Bornean tree frogs (family Rhacophoridae). *Zoological Journal of the Linnean Society*, 101(4), 337–357. https://doi.org/10.1111/j.1096-3642.1991.tb00656.x
+
+9. Enriquez-Urzelai, U. et al. (2015). Locomotor Mode and the Evolution of the Hindlimb in Western Mediterranean Anurans. *Evol Biol* 42, 199–209. https://doi.org/10.1007/s11692-015-9311-1
+
+10. Vera, Ferretti, J. L., Abdala, V., & Cointry, G. R. (2020). Biomechanical properties of anuran long bones: correlations with locomotor modes and habitat use. *Journal of Anatomy*, 236(6), 1112–1125. https://doi.org/10.1111/joa.13161
+
+11. Petrović, Vukov, T. D., & Tomašević Kolarov, N. (2017). Morphometric ratio analyses: Locomotor mode in anurans. *Comptes Rendus. Biologies*, 340(4), 250–257. https://doi.org/10.1016/j.crvi.2017.02.004
+
+  
+  
+  
+ 
